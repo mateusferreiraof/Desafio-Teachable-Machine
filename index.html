@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Teachable Machine - Joinha (Pose)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        #status {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Teachable Machine – Reconhecimento de Joinha</h2>
+
+<button onclick="init()">Iniciar modelo</button>
+<p id="status">Aguardando início...</p>
+
+<canvas id="canvas" width="200" height="200"></canvas>
+<div id="label-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/pose@0.8/dist/teachablemachine-pose.min.js"></script>
+
+<script>
+    const URL = "./my_model/";
+    let model, webcam, ctx;
+
+    async function init() {
+        const status = document.getElementById("status");
+        status.innerText = "Carregando modelo...";
+
+        try {
+            const modelURL = URL + "model.json";
+            const metadataURL = URL + "metadata.json";
+
+            model = await tmPose.load(modelURL, metadataURL);
+            status.innerText = "Modelo carregado com sucesso.";
+
+            // tenta iniciar webcam
+            try {
+                webcam = new tmPose.Webcam(200, 200, true);
+                await webcam.setup();
+                await webcam.play();
+                window.requestAnimationFrame(loop);
+                status.innerText = "Webcam iniciada.";
+            } catch (e) {
+                status.innerText =
+                    "Modelo carregado. Webcam não disponível neste computador.";
+            }
+
+            const canvas = document.getElementById("canvas");
+            ctx = canvas.getContext("2d");
+
+        } catch (error) {
+            status.innerText = "Erro ao carregar o modelo.";
+            console.error(error);
+        }
+    }
+
+    async function loop() {
+        webcam.update();
+        await predict();
+        window.requestAnimationFrame(loop);
+    }
+
+    async function predict() {
+        const { pose, posenetOutput } = await model.estimatePose(webcam.canvas);
+        const prediction = await model.predict(posenetOutput);
+
+        // encontra a classe com maior probabilidade
+        let maior = prediction[0];
+        for (let i = 1; i < prediction.length; i++) {
+            if (prediction[i].probability > maior.probability) {
+                maior = prediction[i];
+            }
+        }
+
+        // DECISÃO NO FLUXO DA APLICAÇÃO
+        const label = document.getElementById("label-container");
+
+        if (maior.className === "Classe 1" && maior.probability > 0.8) {
+            label.innerText = "Joinha detectado - Tipo 1 👍";
+        } 
+        else if (maior.className === "Classe 2" && maior.probability > 0.8) {
+            label.innerText = "Joinha detectado - Tipo 2 👍";
+        } 
+        else if (maior.className === "Classe 3" && maior.probability > 0.8) {
+            label.innerText = "Joinha detectado - Tipo 3 👍";
+        } 
+        else {
+            label.innerText = "Pose não reconhecida";
+        }
+
+        drawPose(pose);
+    }
+
+    function drawPose(pose) {
+        if (!webcam || !webcam.canvas) return;
+
+        ctx.drawImage(webcam.canvas, 0, 0);
+        if (pose) {
+            const minPartConfidence = 0.5;
+            tmPose.drawKeypoints(pose.keypoints, minPartConfidence, ctx);
+            tmPose.drawSkeleton(pose.keypoints, minPartConfidence, ctx);
+        }
+    }
+</script>
+
+</body>
+</html>
