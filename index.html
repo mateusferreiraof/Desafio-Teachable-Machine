@@ -1,115 +1,70 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <title>Teachable Machine - Joinha (Pose)</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-        }
-        #status {
-            margin-top: 10px;
-            font-weight: bold;
-        }
-    </style>
+    <meta charset="UTF-8" />
+    <title>Reconhecimento de Maçã 🍎</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <h2>Reconhecimento de Maçã 🍎</h2>
 
-<h2>Teachable Machine – Reconhecimento de Joinha</h2>
+    <input type="file" id="inputImage" accept="image/*" />
+    <p>Preview da imagem:</p>
+    <img id="preview" alt="" width="300" />
+    <p id="result">Modelo carregado! Escolha uma imagem.</p>
 
-<button onclick="init()">Iniciar modelo</button>
-<p id="status">Aguardando início...</p>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 
-<canvas id="canvas" width="200" height="200"></canvas>
-<div id="label-container"></div>
+    <script>
+        // URL do modelo (não sobrescreve a variável global URL)
+        const MODEL_URL = "./my_model/";
 
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/pose@0.8/dist/teachablemachine-pose.min.js"></script>
+        let model;
 
-<script>
-    const URL = "./my_model/";
-    let model, webcam, ctx;
+        // Carrega o modelo
+        async function init() {
+            model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
+            document.getElementById("result").innerText = "Modelo carregado! Escolha uma imagem.";
+        }
 
-    async function init() {
-        const status = document.getElementById("status");
-        status.innerText = "Carregando modelo...";
+        // Função para fazer a predição com a imagem selecionada
+        async function predictImage(img) {
+            const prediction = await model.predict(img);
+            let maior = prediction[0];
 
-        try {
-            const modelURL = URL + "model.json";
-            const metadataURL = URL + "metadata.json";
-
-            model = await tmPose.load(modelURL, metadataURL);
-            status.innerText = "Modelo carregado com sucesso.";
-
-            // tenta iniciar webcam
-            try {
-                webcam = new tmPose.Webcam(200, 200, true);
-                await webcam.setup();
-                await webcam.play();
-                window.requestAnimationFrame(loop);
-                status.innerText = "Webcam iniciada.";
-            } catch (e) {
-                status.innerText =
-                    "Modelo carregado. Webcam não disponível neste computador.";
+            for (let i = 1; i < prediction.length; i++) {
+                if (prediction[i].probability > maior.probability) maior = prediction[i];
             }
 
-            const canvas = document.getElementById("canvas");
-            ctx = canvas.getContext("2d");
-
-        } catch (error) {
-            status.innerText = "Erro ao carregar o modelo.";
-            console.error(error);
-        }
-    }
-
-    async function loop() {
-        webcam.update();
-        await predict();
-        window.requestAnimationFrame(loop);
-    }
-
-    async function predict() {
-        const { pose, posenetOutput } = await model.estimatePose(webcam.canvas);
-        const prediction = await model.predict(posenetOutput);
-
-        // encontra a classe com maior probabilidade
-        let maior = prediction[0];
-        for (let i = 1; i < prediction.length; i++) {
-            if (prediction[i].probability > maior.probability) {
-                maior = prediction[i];
+            if (maior.probability > 0.7 && maior.className === "Maçã") {
+                document.getElementById("result").innerText = 
+                    `Detectado Maçã 🍎 com ${(maior.probability * 100).toFixed(1)}% de confiança!`;
+            } else if (maior.probability > 0.7) {
+                document.getElementById("result").innerText = 
+                    `Detectado: ${maior.className} (${(maior.probability * 100).toFixed(1)}%)`;
+            } else {
+                document.getElementById("result").innerText = "Imagem não reconhecida com confiança suficiente.";
             }
+
+            console.log(prediction);
         }
 
-        // DECISÃO NO FLUXO DA APLICAÇÃO
-        const label = document.getElementById("label-container");
+        const input = document.getElementById("inputImage");
+        const preview = document.getElementById("preview");
 
-        if (maior.className === "Classe 1" && maior.probability > 0.8) {
-            label.innerText = "Joinha detectado - Tipo 1 👍";
-        } 
-        else if (maior.className === "Classe 2" && maior.probability > 0.8) {
-            label.innerText = "Joinha detectado - Tipo 2 👍";
-        } 
-        else if (maior.className === "Classe 3" && maior.probability > 0.8) {
-            label.innerText = "Joinha detectado - Tipo 3 👍";
-        } 
-        else {
-            label.innerText = "Pose não reconhecida";
-        }
+        // Atualiza preview e chama predição ao escolher imagem
+        input.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
 
-        drawPose(pose);
-    }
+            preview.src = URL.createObjectURL(file);
 
-    function drawPose(pose) {
-        if (!webcam || !webcam.canvas) return;
+            preview.onload = () => predictImage(preview);
+        });
 
-        ctx.drawImage(webcam.canvas, 0, 0);
-        if (pose) {
-            const minPartConfidence = 0.5;
-            tmPose.drawKeypoints(pose.keypoints, minPartConfidence, ctx);
-            tmPose.drawSkeleton(pose.keypoints, minPartConfidence, ctx);
-        }
-    }
-</script>
-
+        // Inicializa o modelo
+        init();
+    </script>
 </body>
 </html>
