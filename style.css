@@ -3,25 +3,27 @@
 /* Reset básico e fonte */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #fefefe;
-    color: #333;
+    background-color: #656a6d;
+    color: #fff;
     display: flex;
     flex-direction: column;
     align-items: center;
     margin: 0;
     padding: 20px;
+    height: 90vh;
 }
 
 /* Título */
 h2 {
-    color: #4caf50;
+    margin-top: 200px;
+    color: #fff;
     text-align: center;
 }
 
 /* Input de arquivo */
 input[type="file"] {
     padding: 10px;
-    border: 2px solid #4caf50;
+    border: 2px solid blue;
     border-radius: 5px;
     cursor: pointer;
     margin-bottom: 20px;
@@ -29,7 +31,7 @@ input[type="file"] {
 
 /* Preview da imagem */
 #preview {
-    border: 3px solid #4caf50;
+    border: 3px solid #fff;
     border-radius: 10px;
     max-width: 300px;
     max-height: 300px;
@@ -41,7 +43,7 @@ input[type="file"] {
 #result {
     font-size: 18px;
     font-weight: bold;
-    color: #ff5722;
+    color: #fff;
     text-align: center;
     margin-top: 10px;
 }
@@ -53,6 +55,5 @@ input[type="file"] {
 
 /* Pequeno efeito no hover do input */
 input[type="file"]:hover {
-    border-color: #388e3c;
-    background-color: #f0fff0;
+    box-shadow: 5px 1px 15px rgba(25, 0, 255, 0.2);
 }

@@ -8,8 +8,8 @@
 <body>
     <h2>É maçã ? 🍎</h2>
 
+    <p id="result">Escolha uma imagem:</p>
     <input type="file" id="inputImage" accept="image/*" />
-    <p id="result">Modelo carregado! Escolha uma imagem.</p>
     <p>Visualização da imagem:</p>
     <img id="preview" alt="" width="300" />
 
@@ -25,7 +25,7 @@
         // Carrega o modelo
         async function init() {
             model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
-            document.getElementById("result").innerText = "Modelo carregado! Escolha uma imagem.";
+            document.getElementById("result").innerText = "Escolha uma imagem:";
         }
 
         // Função para fazer a predição com a imagem selecionada
@@ -39,10 +39,10 @@
 
             if (maior.probability > 0.7 && maior.className === "Maçã") {
                 document.getElementById("result").innerText = 
-                    `Detectado Maçã 🍎 com ${(maior.probability * 100).toFixed(1)}% de confiança!`;
+                    `Detectado: É maçã! 🍎 com ${(maior.probability * 100).toFixed(1)}% de confiança!`;
             } else if (maior.probability > 0.7) {
                 document.getElementById("result").innerText = 
-                    `Detectado: ${maior.className} (${(maior.probability * 100).toFixed(1)}%)`;
+                    `Detectado: Não é uma maçã (${(maior.probability * 100).toFixed(1)}%)`;
             } else {
                 document.getElementById("result").innerText = "Imagem não reconhecida com confiança suficiente.";
             }
